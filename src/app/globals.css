@@ -60,7 +60,7 @@ h1 em { color: var(--rose); font-family: Georgia, serif; font-weight: 400; }
 .editor-actions { justify-content: flex-start; margin-right: auto; }
 .editor-actions { margin-left: auto; margin-right: 0; justify-content: flex-end; }
 .formula-paper > .ink-area canvas { position: absolute !important; z-index: 3; inset: 0 !important; width: 100% !important; height: 100% !important; background: transparent !important; background-image: none !important; pointer-events: none !important; }
-.draw-mode .formula-paper > .ink-area canvas { z-index: 9999 !important; pointer-events: auto !important; cursor: crosshair !important; }
+.draw-mode .formula-paper > .recipe-drawing-layer { z-index: 3 !important; }
 
 .size-control { display: inline-flex; align-items: center; gap: 7px; min-height: 42px; padding: 0 9px; border: 1px solid var(--border); border-radius: 5px; background: var(--paper); color: var(--text); font-size: 11px; white-space: nowrap; }
 .size-control input { width: 88px; accent-color: var(--rose); }
@@ -112,7 +112,7 @@ h1 em { color: var(--rose); font-family: Georgia, serif; font-weight: 400; }
 .editor-page { isolation: isolate; }
 .editor-toolbar { position: sticky; top: 0; z-index: 100; }
 .paper-wrap { position: relative; z-index: 1; isolation: isolate; }
-.draw-mode .formula-paper > .ink-area canvas { z-index: 3 !important; }
+.draw-mode .formula-paper > .recipe-drawing-layer { z-index: 3 !important; }
 .color-studio-island { position: relative; z-index: 100; }
 .editor-actions.studio-expanded { max-height: 230px; flex-wrap: wrap; }
 .ink-colors { display: inline-flex; align-items: center; gap: 6px; padding: 0 7px; }
@@ -126,4 +126,34 @@ h1 em { color: var(--rose); font-family: Georgia, serif; font-weight: 400; }
   .color-studio-island { position: relative; z-index: 100; }
   .editor-actions.studio-expanded { max-height: 420px; grid-template-columns: repeat(4,minmax(0,1fr)); }
   .ink-colors { grid-column: span 2; justify-content: center; }
+}.recipe-drawing-layer { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+.recipe-drawing-layer canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; background: transparent; }
+.recipe-drawing-layer .recipe-ink-base { pointer-events: none; }
+.recipe-drawing-layer .recipe-ink-preview { pointer-events: none; touch-action: none; }
+.recipe-drawing-layer.drawing-enabled { z-index: 4; pointer-events: auto; }
+.recipe-drawing-layer.drawing-enabled .recipe-ink-preview { pointer-events: auto; cursor: crosshair; }
+.editor-toolbar { position: sticky; top: 0; z-index: 20; }
+.paper-wrap { position: relative; overflow: auto; touch-action: pan-x pan-y; }
+.formula-paper { isolation: isolate; }/* Matched range controls and consistent vector toolbar icons */
+.color-studio-island .size-control,
+.color-studio-island .opacity-control { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); color: var(--text); font-size: 9px; white-space: nowrap; }
+.color-studio-island .size-control input,
+.color-studio-island .opacity-control input { width: 72px; accent-color: var(--rose); }
+.color-studio-island .size-control > span:last-child,
+.color-studio-island .opacity-control > span:last-child { min-width: 31px; color: var(--muted); text-align: right; }
+.color-studio-island .opacity-control > span:first-child { color: var(--text); }
+.color-studio-island .tool-button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.color-studio-island .tool-button svg,
+.studio-title svg,
+.studio-chevron { flex: 0 0 auto; width: 15px; height: 15px; }
+.studio-title { display: inline-flex; align-items: center; gap: 7px; }
+.studio-title svg { color: var(--rose); }
+.studio-chevron { color: var(--muted); }
+.color-studio-island button:focus-visible,
+.color-studio-island input:focus-visible { outline: 2px solid var(--rose); outline-offset: 2px; }
+@media (max-width: 760px) {
+  .color-studio-island .size-control,
+  .color-studio-island .opacity-control { grid-column: span 2; min-width: 0; justify-content: space-between; }
+  .color-studio-island .size-control input,
+  .color-studio-island .opacity-control input { flex: 1; width: auto; min-width: 48px; }
 }
