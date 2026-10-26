@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, PointerEvent, useEffect, useRef, useState } from "react";
+import { ChangeEvent, PointerEvent, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 type Stroke = { points: { x: number; y: number }[]; color: string; width: number };
 type Row = { date: string; area: string; shade: string; amount: string; oxidant: string; oxidantAmount: string; ratio: string; notes: string };
@@ -66,10 +66,10 @@ function Editor({ customer, recipe, saving, onBack, onChange, onSave }: { custom
   const [drawMode, setDrawMode] = useState(false);
   const point = (event: PointerEvent<HTMLCanvasElement>) => { const rect = event.currentTarget.getBoundingClientRect(); return { x: (event.clientX - rect.left) / rect.width, y: (event.clientY - rect.top) / rect.height }; };
   const redraw = (strokes: Stroke[]) => { const el = canvas.current; const context = el?.getContext("2d"); if (!el || !context) return; context.clearRect(0, 0, el.width, el.height); context.lineCap = "round"; strokes.forEach((item) => { context.beginPath(); context.strokeStyle = item.color; context.lineWidth = item.width * el.width; item.points.forEach((p, i) => i ? context.lineTo(p.x * el.width, p.y * el.height) : context.moveTo(p.x * el.width, p.y * el.height)); context.stroke(); }); };
-  useEffect(() => redraw(recipe.strokes), [recipe.strokes]);
-  const start = (event: PointerEvent<HTMLCanvasElement>) => { drawing.current = true; event.currentTarget.setPointerCapture(event.pointerId); stroke.current = { points: [point(event)], color: "#543B3D", width: 0.0035 }; };
+  useLayoutEffect(() => redraw(recipe.strokes), [recipe.strokes, drawMode]);
+  const start = (event: PointerEvent<HTMLCanvasElement>) => { drawing.current = true; event.currentTarget.setPointerCapture(event.pointerId); stroke.current = { points: [point(event)], color: "#543B3D", width: 0.0018 }; };
   const move = (event: PointerEvent<HTMLCanvasElement>) => { if (!drawing.current || !stroke.current) return; stroke.current.points.push(point(event)); redraw([...recipe.strokes, stroke.current]); };
-  const stop = () => { if (!drawing.current || !stroke.current) return; drawing.current = false; onChange({ ...recipe, strokes: [...recipe.strokes, stroke.current] }); stroke.current = null; };
+  const stop = () => { if (!drawing.current || !stroke.current) return; drawing.current = false; const nextStrokes = [...recipe.strokes, stroke.current]; redraw(nextStrokes); onChange({ ...recipe, strokes: nextStrokes }); stroke.current = null; };
   const changeRow = (index: number, key: keyof Row, value: string) => onChange({ ...recipe, rows: recipe.rows.map((row, i) => i === index ? { ...row, [key]: value } : row) });
   const columns: { key: keyof Row; label: string; type?: string; placeholder?: string }[] = [
     { key: "date", label: "DATE (Day/Month/Year)", type: "date" }, { key: "area", label: "AREA" }, { key: "shade", label: "COLOR NUANCE", placeholder: "7.13" }, { key: "amount", label: "COLOR AMOUNT (g)" }, { key: "oxidant", label: "OXIDANT", placeholder: "6%" }, { key: "oxidantAmount", label: "OXIDANT AMOUNT (g)" }, { key: "ratio", label: "MIXING RATIO" }, { key: "notes", label: "NOTES" },
@@ -84,7 +84,7 @@ function LegacyEditor({ customer, recipe, saving, onBack, onChange, onSave }: { 
   const point = (event: PointerEvent<HTMLCanvasElement>) => { const rect = event.currentTarget.getBoundingClientRect(); return { x: (event.clientX - rect.left) / rect.width, y: (event.clientY - rect.top) / rect.height }; };
   const redraw = (strokes: Stroke[]) => { const el = canvas.current; const context = el?.getContext("2d"); if (!el || !context) return; context.clearRect(0, 0, el.width, el.height); context.lineCap = "round"; strokes.forEach((item) => { context.beginPath(); context.strokeStyle = item.color; context.lineWidth = item.width * el.width; item.points.forEach((p, i) => i ? context.lineTo(p.x * el.width, p.y * el.height) : context.moveTo(p.x * el.width, p.y * el.height)); context.stroke(); }); };
   useEffect(() => redraw(recipe.strokes), [recipe.strokes]);
-  const start = (event: PointerEvent<HTMLCanvasElement>) => { drawing.current = true; event.currentTarget.setPointerCapture(event.pointerId); stroke.current = { points: [point(event)], color: "#543B3D", width: 0.0035 }; };
+  const start = (event: PointerEvent<HTMLCanvasElement>) => { drawing.current = true; event.currentTarget.setPointerCapture(event.pointerId); stroke.current = { points: [point(event)], color: "#543B3D", width: 0.0018 }; };
   const move = (event: PointerEvent<HTMLCanvasElement>) => { if (!drawing.current || !stroke.current) return; stroke.current.points.push(point(event)); redraw([...recipe.strokes, stroke.current]); };
   const stop = () => { if (!drawing.current || !stroke.current) return; drawing.current = false; onChange({ ...recipe, strokes: [...recipe.strokes, stroke.current] }); stroke.current = null; };
   const changeRow = (index: number, key: keyof Row, value: string) => onChange({ ...recipe, rows: recipe.rows.map((row, i) => i === index ? { ...row, [key]: value } : row) });

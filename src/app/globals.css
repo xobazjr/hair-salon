@@ -58,3 +58,6 @@ h1 em { color: var(--rose); font-family: Georgia, serif; font-weight: 400; }
 .draw-mode .template-ink-canvas { position: absolute !important; inset: 0 !important; width: 100% !important; height: 100% !important; background: transparent !important; background-image: none !important; }
 .editor-toolbar { justify-content: flex-start; }
 .editor-actions { justify-content: flex-start; margin-right: auto; }
+.editor-actions { margin-left: auto; margin-right: 0; justify-content: flex-end; }
+.formula-paper > .ink-area canvas { position: absolute !important; z-index: 3; inset: 0 !important; width: 100% !important; height: 100% !important; background: transparent !important; background-image: none !important; pointer-events: none !important; }
+.draw-mode .formula-paper > .ink-area canvas { z-index: 9999 !important; pointer-events: auto !important; cursor: crosshair !important; }
