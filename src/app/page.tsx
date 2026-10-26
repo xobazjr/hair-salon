@@ -1,9 +1,5 @@
-import Image from "next/image";
+import { SalonApp } from "@/components/salon-app";
 
 export default function Home() {
-  return (
-    <div>
-
-    </div>
-  );
+  return <SalonApp />;
 }
