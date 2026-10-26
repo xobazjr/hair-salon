@@ -89,6 +89,71 @@
 - สิทธิ์ผู้ใช้งานและการเข้าสู่ระบบ
 - การแก้ไข/ลบประวัติ และการดูประวัติย้อนหลัง
 
+## Product design specification
+
+รายละเอียดในหมวดนี้เป็น baseline ด้าน product/design สำหรับหน้าจอและการเปลี่ยนแปลงในอนาคต โดยข้อกำหนด flow และ acceptance criteria ด้านบนยังคงเป็นข้อกำหนดการทำงานหลัก
+
+### เป้าหมายและ workflow ด้านการออกแบบ
+
+- แอปใช้บันทึกประวัติสูตรผสมสีผมสำหรับช่างใช้งานคนเดียว
+- ประสบการณ์หลักควรให้ความรู้สึกเหมือนสมุดหรือเทมเพลต Procreate ผู้ใช้เขียนด้วย Apple Pencil, stylus, นิ้ว หรือเมาส์ได้โดยตรง ไม่บังคับให้พิมพ์ทุกช่อง
+- Workflow: เปิดแอป → ค้นหาลูกค้าเรียงตามชื่อ → เปิดประวัติสูตร → เลือกสูตรเดิมหรือสร้างใหม่ → เขียนบนเทมเพลต → บันทึกลงเครื่อง → กลับมาแก้ไขภายหลัง
+- รองรับ mobile, iPad และ laptop browser แบบ responsive
+- ภาษาหลักของ UI salon คือ Swiss Standard German (`de-CH`); หมายเหตุการพัฒนาใช้ภาษาไทยได้
+
+### Design language
+
+- สไตล์ minimalist premium salon stationery: warm neutral, soft dusty rose, พื้นผิวคล้ายกระดาษ เส้น grid บาง การ์ดมุมมน และ navigation ที่ไม่รก
+- สีหลัก: พื้นหลัง `#FAF7F4`, sidebar `#F5EFEB`, กระดาษ `#FFFDFA`, dusty rose หลัก `#9D666D`, rose รอง `#A26B70`, selected state `#E8D0CE`, section header `#E7D6D0`, border `#E0D3CD`, primary text `#322B2C`, secondary text `#877779`, ink `#543B3D`
+- Typography: clean sans-serif (Inter หรือ system UI) และชื่อ section ภาษาเยอรมันแบบ uppercase ที่มีระยะห่างตัวอักษร
+- ใช้ generic Hair Salon identity ในโค้ด ภาพอ้างอิงที่ได้แรงบันดาลใจจาก L'Oréal ไม่ใช่ทรัพย์สินที่ได้รับอนุญาตให้ใช้
+
+### Responsive layout
+
+- Mobile: รายชื่อลูกค้าที่ค้นหาได้ โปรไฟล์ลูกค้าเดี่ยว และประวัติสูตรแนวตั้ง มี handwriting toolbar แบบลอยหรือแบบย่อ รองรับการ scroll แนวนอนหรือ zoom และให้ความสำคัญกับ tap target ขนาดใหญ่
+- iPad: sidebar ลูกค้าด้านซ้าย ประวัติสูตรถัดจาก document canvas ขนาดใหญ่ เครื่องมือเขียนและแก้ไขที่เหมาะกับ Pencil
+- Laptop: layout แบบสอง pane ระหว่าง sidebar กับ content และรองรับการเขียนด้วยเมาส์
+
+### Main screens
+
+1. `Kunden`: รายชื่อลูกค้าเรียงตามตัวอักษร ค้นหา และเพิ่มลูกค้า
+2. `Kundenprofil`: ชื่อลูกค้า ประวัติสูตรเรียงวันที่ใหม่สุดก่อน และสร้างสูตรใหม่
+3. `Rezept-Editor`: color sheet แบบเขียนมือเต็มหน้า พร้อม undo, eraser และ save
+4. `Backup / Restore`: สำรองและกู้คืน JSON ในเครื่องแบบพกพา
+5. อนาคต: export รูปภาพ/PDF, แนบรูป, templates gallery, autosave, stylus pressure, zoom และ pan
+
+### Canonical color-formula template
+
+- Heading: `FARBBERATUNG & REZEPTUR — KUNDENKARTE`
+- ห้ามเพิ่มกล่อง date / stylist / salon แยกที่มุมขวาบน
+- Sections: `KUNDIN / KUNDE` (Name, Tel., E-Mail, Geb. Datum), `HAARSTRUKTUR` (Fein, Normal, Dick), `HAARZUSTAND` (Gesund, Trocken, Strapaziert, Stark strapaziert), `NATURHAARFARBE` (shade scale 1–8), `GRAUANTEIL (%)` (percentage checkboxes), `FARBREZEPTUR` (แถวว่าง 8 แถว), `PRODUKTE VERWENDET`, `TECHNIK`, `ERGEBNIS / FOTO`, `NOTIZEN / BESONDERHEITEN`
+- ลำดับคอลัมน์ formula table ต้องคงไว้: `NR. | DATUM (Tag/Monat/Jahr) | BEREICH | FARBNUANCE | FARBMENGE (g) | OXIDANT | OXIDANTMENGE (g) | MISCHUNGSVERHÄLTNIS | BEMERKUNGEN`
+- วันที่ต้องอยู่ช่วงต้นของตารางทันทีหลังเลขแถว และ processing time ต้องไม่เป็นคอลัมน์แรก
+
+### Data, storage และคุณภาพด้านการออกแบบ
+
+- Architecture เป็น local-first ไม่ต้องมี server หรือ account
+- Prototype ปัจจุบันใช้ React + Vite + `idb` / IndexedDB
+- Entities: `customers` (`id`, `name`, `createdAt`) และ `records` (`id`, `customerId`, `date`, `strokes`, `updatedAt`)
+- เก็บ handwriting เป็น normalized vector strokes ที่แก้ไขได้ ไม่เก็บเพียงภาพ flattened screenshot
+- สำรองข้อมูลด้วย manual JSON export/import และต้องไม่ถือว่า browser storage ทดแทน backup
+- อนาคตอาจรองรับ Tauri desktop หรือ native iPad app เพื่อเชื่อม filesystem ที่คงทน รวมถึง image/PDF export
+- รายชื่อลูกค้าเรียงตาม Swiss German collation และประวัติเรียงใหม่สุดก่อน โดยไม่เขียนทับ visit เดิม
+- ลูกค้าหนึ่งคนมีได้หลาย records และ handwriting ต้องคงอยู่เมื่อบันทึกแล้วเปิดกลับมาใหม่
+- แอปต้องทำงานได้โดยไม่ใช้ network หลังโหลด app assets ในเครื่องแล้ว
+- ห้ามอ้างว่ามี automatic cloud backup, direct laptop access หรือ cross-device sync
+- UI ต้อง responsive, accessible และรองรับการใช้งานด้วยปากกา
+
+### Milestones
+
+- MVP starter: customer list/search, local customer records, editable drawing canvas, save/reopen, undo/erase, JSON backup/restore และ responsive layout
+- Next: autosave, PNG/PDF export ที่เชื่อถือได้, zoom/pan, แก้ไขข้อมูลติดต่อ และ mobile handwriting toolbar ที่ดีขึ้น
+- Later: รูปภาพ, เลือกหลาย template, image thumbnails, full-text notes search, secure backups และ installable offline app
+
+### Design source of truth
+
+ใช้หมวดนี้เป็นแหล่งอ้างอิงหลักด้าน product/design สำหรับหน้าจอและการเปลี่ยนแปลง implementation ในอนาคต หากมี requirement ใหม่ที่ขัดแย้งกัน ต้องแก้เอกสารนี้อย่างชัดเจน ชื่อ เบอร์โทร และค่าของสูตรใน visual mockups ทั้งหมดเป็นข้อมูลตัวอย่างสมมติ
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 ## This is NOT the Next.js you know
