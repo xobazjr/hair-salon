@@ -44,3 +44,10 @@ h1 em { color: var(--rose); font-family: Georgia, serif; font-weight: 400; }
 .shade-option.selected { border: 2px solid var(--rose); box-shadow: 0 0 0 3px #fffdfa, 0 0 0 5px var(--rose), inset 0 -18px 0 rgba(0,0,0,.08); transform: translateY(-3px); }
 .shade-option:focus-within { outline: 2px solid var(--ink); outline-offset: 3px; }
 .selected-level { display: flex; align-items: center; gap: 6px; margin: 9px 0 7px; color: var(--rose-dark); font-size: 10px; font-weight: 700; }.selected-level::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--rose); }
+
+/* The reference template has eight business fields after the row number. */
+.formula-row { grid-template-columns: 38px 1.15fr 1fr 1.15fr 1fr .9fr 1fr 1fr 1.2fr; min-width: 1120px; }
+.formula-row > * { width: 100%; min-height: 44px; box-sizing: border-box; }
+.formula-row.formula-head > * { display: flex; align-items: center; justify-content: center; text-align: center; white-space: normal; line-height: 1.15; padding: 7px 6px; }
+.formula-row:not(.formula-head) > input { background: rgba(255, 253, 250, .72); }
+@media (max-width: 760px) { .formula-paper { min-width: 1100px; } }
