@@ -63,13 +63,54 @@ function Editor({ customer, recipe, saving, onBack, onChange, onSave }: { custom
   const canvas = useRef<HTMLCanvasElement>(null);
   const drawing = useRef(false);
   const stroke = useRef<Stroke | null>(null);
+  const activeTouches = useRef(new Map<number, number>());
+  const previousPanX = useRef<number | null>(null);
   const [drawMode, setDrawMode] = useState(false);
   const point = (event: PointerEvent<HTMLCanvasElement>) => { const rect = event.currentTarget.getBoundingClientRect(); return { x: (event.clientX - rect.left) / rect.width, y: (event.clientY - rect.top) / rect.height }; };
   const redraw = (strokes: Stroke[]) => { const el = canvas.current; const context = el?.getContext("2d"); if (!el || !context) return; context.clearRect(0, 0, el.width, el.height); context.lineCap = "round"; strokes.forEach((item) => { context.beginPath(); context.strokeStyle = item.color; context.lineWidth = item.width * el.width; item.points.forEach((p, i) => i ? context.lineTo(p.x * el.width, p.y * el.height) : context.moveTo(p.x * el.width, p.y * el.height)); context.stroke(); }); };
   useLayoutEffect(() => redraw(recipe.strokes), [recipe.strokes, drawMode]);
-  const start = (event: PointerEvent<HTMLCanvasElement>) => { drawing.current = true; event.currentTarget.setPointerCapture(event.pointerId); stroke.current = { points: [point(event)], color: "#543B3D", width: 0.0018 }; };
-  const move = (event: PointerEvent<HTMLCanvasElement>) => { if (!drawing.current || !stroke.current) return; stroke.current.points.push(point(event)); redraw([...recipe.strokes, stroke.current]); };
-  const stop = () => { if (!drawing.current || !stroke.current) return; drawing.current = false; const nextStrokes = [...recipe.strokes, stroke.current]; redraw(nextStrokes); onChange({ ...recipe, strokes: nextStrokes }); stroke.current = null; };
+  const start = (event: PointerEvent<HTMLCanvasElement>) => {
+    event.currentTarget.setPointerCapture(event.pointerId);
+    if (event.pointerType === "touch") {
+      activeTouches.current.set(event.pointerId, event.clientX);
+      if (activeTouches.current.size === 2 && drawMode) {
+        drawing.current = false;
+        stroke.current = null;
+        previousPanX.current = [...activeTouches.current.values()].reduce((sum, x) => sum + x, 0) / 2;
+        return;
+      }
+    }
+    if (activeTouches.current.size > 1) return;
+    drawing.current = true;
+    stroke.current = { points: [point(event)], color: "#543B3D", width: 0.0018 };
+  };
+  const move = (event: PointerEvent<HTMLCanvasElement>) => {
+    if (event.pointerType === "touch" && activeTouches.current.has(event.pointerId)) {
+      activeTouches.current.set(event.pointerId, event.clientX);
+      if (drawMode && activeTouches.current.size >= 2) {
+        const centerX = [...activeTouches.current.values()].reduce((sum, x) => sum + x, 0) / activeTouches.current.size;
+        if (previousPanX.current !== null) {
+          const wrapper = event.currentTarget.closest(".paper-wrap");
+          if (wrapper) wrapper.scrollLeft -= centerX - previousPanX.current;
+        }
+        previousPanX.current = centerX;
+        return;
+      }
+    }
+    if (!drawing.current || !stroke.current) return;
+    stroke.current.points.push(point(event));
+    redraw([...recipe.strokes, stroke.current]);
+  };
+  const stop = (event: PointerEvent<HTMLCanvasElement>) => {
+    activeTouches.current.delete(event.pointerId);
+    if (activeTouches.current.size < 2) previousPanX.current = null;
+    if (!drawing.current || !stroke.current) return;
+    drawing.current = false;
+    const nextStrokes = [...recipe.strokes, stroke.current];
+    redraw(nextStrokes);
+    onChange({ ...recipe, strokes: nextStrokes });
+    stroke.current = null;
+  };
   const changeRow = (index: number, key: keyof Row, value: string) => onChange({ ...recipe, rows: recipe.rows.map((row, i) => i === index ? { ...row, [key]: value } : row) });
   const columns: { key: keyof Row; label: string; type?: string; placeholder?: string }[] = [
     { key: "date", label: "DATE (Day/Month/Year)", type: "date" }, { key: "area", label: "AREA" }, { key: "shade", label: "COLOR NUANCE", placeholder: "7.13" }, { key: "amount", label: "COLOR AMOUNT (g)" }, { key: "oxidant", label: "OXIDANT", placeholder: "6%" }, { key: "oxidantAmount", label: "OXIDANT AMOUNT (g)" }, { key: "ratio", label: "MIXING RATIO" }, { key: "notes", label: "NOTES" },
