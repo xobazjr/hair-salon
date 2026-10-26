@@ -157,3 +157,12 @@ h1 em { color: var(--rose); font-family: Georgia, serif; font-weight: 400; }
   .color-studio-island .size-control input,
   .color-studio-island .opacity-control input { flex: 1; width: auto; min-width: 48px; }
 }
+
+/* Keep the drawing coordinate system stable while the viewport changes. */
+.formula-paper { width: 1120px; min-width: 1120px; max-width: none; padding: 38px; }
+@media (max-width: 760px) {
+  .paper-meta,
+  .paper-sections { flex-direction: row; }
+  .paper-title { text-align: right; }
+  .paper-bottom-grid { grid-template-columns: repeat(3, 1fr); }
+}
