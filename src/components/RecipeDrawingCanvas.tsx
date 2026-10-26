@@ -66,7 +66,7 @@ export default function RecipeDrawingCanvas({ strokes, recipeId, enabled, tool, 
   const history = useRef(createStrokeHistory<Stroke[]>([]));
   const didInitialize = useRef(false);
   const activeGesture = useRef<Gesture | null>(null);
-  const activeTouches = useRef(new Map<number, { x: number; y: number }>());
+  const activePointers = useRef(new Map<number, { x: number; y: number }>());
   const selectedId = useRef<string | null>(null);
   const frame = useRef<number | null>(null);
 
@@ -214,20 +214,25 @@ export default function RecipeDrawingCanvas({ strokes, recipeId, enabled, tool, 
     return samples.length ? samples : [native];
   };
   const centroid = () => {
-    const points = [...activeTouches.current.values()];
+    const points = [...activePointers.current.values()];
     return { x: points.reduce((sum, point) => sum + point.x, 0) / points.length, y: points.reduce((sum, point) => sum + point.y, 0) / points.length };
   };
   const beginPan = () => {
     activeGesture.current = { kind: "pan", center: centroid() };
     schedulePreview();
   };
+  const scrollPageBy = (deltaY: number) => {
+    const scrollingElement = document.scrollingElement;
+    if (scrollingElement) scrollingElement.scrollTop -= deltaY;
+    else window.scrollBy(0, -deltaY);
+  };
   const onPointerDown = (event: ReactPointerEvent<HTMLCanvasElement>) => {
     if (!enabled) return;
-    try { event.currentTarget.setPointerCapture(event.pointerId); } catch { /* The pointer may have been cancelled by the browser. */ }
-    if (event.pointerType === "touch") {
-      activeTouches.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
-      if (activeTouches.current.size >= 2) { activeGesture.current = null; beginPan(); return; }
+    if (event.pointerType !== "touch") {
+      try { event.currentTarget.setPointerCapture(event.pointerId); } catch { /* The pointer may have been cancelled by the browser. */ }
     }
+    activePointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (activePointers.current.size >= 2) { activeGesture.current = null; beginPan(); return; }
     const at = getPoint(event.clientX, event.clientY);
     if (tool === "pan") {
       activeGesture.current = { kind: "mouse-pan", pointerId: event.pointerId, x: event.clientX, y: event.clientY };
@@ -264,17 +269,17 @@ export default function RecipeDrawingCanvas({ strokes, recipeId, enabled, tool, 
   };
   const onPointerMove = (event: ReactPointerEvent<HTMLCanvasElement>) => {
     if (!enabled) return;
-    if (event.pointerType === "touch" && activeTouches.current.has(event.pointerId)) activeTouches.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (activePointers.current.has(event.pointerId)) activePointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
     const gesture = activeGesture.current;
     if (!gesture) return;
-    if (activeTouches.current.size >= 2) {
+    if (activePointers.current.size >= 2) {
       if (gesture.kind !== "pan") { activeGesture.current = null; beginPan(); return; }
       const center = centroid();
       const dx = center.x - gesture.center.x;
       const dy = center.y - gesture.center.y;
       const wrapper = layer.current?.closest(".paper-wrap");
       if (wrapper) wrapper.scrollLeft -= dx;
-      window.scrollBy({ left: 0, top: -dy, behavior: "instant" });
+      scrollPageBy(dy);
       activeGesture.current = { kind: "pan", center };
       return;
     }
@@ -283,7 +288,7 @@ export default function RecipeDrawingCanvas({ strokes, recipeId, enabled, tool, 
       const dy = event.clientY - gesture.y;
       const wrapper = layer.current?.closest(".paper-wrap");
       if (wrapper) wrapper.scrollLeft -= dx;
-      window.scrollBy({ left: 0, top: -dy, behavior: "instant" });
+      scrollPageBy(dy);
       activeGesture.current = { ...gesture, x: event.clientX, y: event.clientY };
       return;
     }
@@ -310,10 +315,10 @@ export default function RecipeDrawingCanvas({ strokes, recipeId, enabled, tool, 
     schedulePreview();
   };
   const finishGesture = (event: ReactPointerEvent<HTMLCanvasElement>, cancelled = false) => {
-    if (event.pointerType === "touch") activeTouches.current.delete(event.pointerId);
+    activePointers.current.delete(event.pointerId);
     const gesture = activeGesture.current;
     if (!gesture || ("pointerId" in gesture && gesture.pointerId !== event.pointerId)) {
-      if (activeTouches.current.size === 0) activeGesture.current = null;
+      if (activePointers.current.size === 0) activeGesture.current = null;
       return;
     }
     activeGesture.current = null;
